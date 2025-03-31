@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>เครื่องคำนวณวงเงินกู้สูงสุด</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background-color: #ffffff;
+      color: #333;
+      line-height: 1.6;
+      max-width: 960px;
+      margin: auto;
+    }
+    h1, h2, h3 {
+      color: #0066cc;
+    }
+    .info-box {
+      background: #f0f8ff;
+      border-left: 6px solid #2196F3;
+      padding: 10px 20px;
+      margin-bottom: 20px;
+    }
+    label, input, select, button {
+      display: block;
+      margin: 10px 0;
+    }
+    input, select {
+      padding: 6px;
+      width: 100%;
+      max-width: 300px;
+    }
+    button {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: right;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .logo {
+      max-width: 360px;
+      display: block;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <img src="logo.png" class="logo" alt="โลโก้กลุ่ม กบข.นข." />
+  <h1>📊 เครื่องคำนวณวงเงินกู้สูงสุด กบข.นข.</h1>
+
+  <div class="info-box">
+    <p>ระบบนี้ใช้สำหรับคำนวณวงเงินกู้สูงสุดของสมาชิกตามระเบียบกลุ่มบุคคลเพื่อบริหารจัดการเงินของข้าราชการครูฯ กบข.นข.</p>
+    <p>📌 คำนวณจาก: ยอดเงินที่สามารถหักได้ - เงินฝากหุ้นประจำ + เงินฝากหุ้นเพิ่มเติมตามช่วงงวด</p>
+    <p>📌 อิงตามดอกเบี้ยคงที่ 1.00% ต่อเดือน (ลดต้นลดดอก)</p>
+    <p>📌 มีผลตามกฎเกณฑ์จากเอกสาร "ระเบียบว่าด้วยการกู้ยืมเงิน" และ "ระเบียบค้ำประกัน" พ.ศ. 2568</p>
+  </div>
+
+  <div class="section">
+    <label>💸 กรอกยอดเงินที่สามารถหักได้ต่อเดือน (บาท):
+      <input type="number" id="monthlyPayment" value="2940">
+    </label>
+
+    <label>💼 กรอกยอดเงินฝากหุ้นประจำของคุณ (บาท):
+      <input type="number" id="fixedShare" value="500">
+    </label>
+
+    <label>📆 เลือกจำนวนงวดที่ต้องการผ่อน:
+      <select id="term">
+        <option value="12">12 งวด</option>
+        <option value="24">24 งวด</option>
+        <option value="36" selected>36 งวด</option>
+      </select>
+    </label>
+
+    <button onclick="calculateLoan()">คำนวณยอดกู้สูงสุด</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    function formatNumber(num) {
+      return parseFloat(num).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function getShareRate(term) {
+      if (term <= 12) return 0.08;
+      if (term <= 24) return 0.10;
+      return 0.12;
+    }
+
+    function calculateLoan() {
+      const monthlyPayment = parseFloat(document.getElementById("monthlyPayment").value);
+      const fixedShare = parseFloat(document.getElementById("fixedShare").value);
+      const term = parseInt(document.getElementById("term").value);
+      const rate = 0.01;
+      const shareRate = getShareRate(term);
+
+      const maxPayable = monthlyPayment - fixedShare;
+      const factor = (1 - Math.pow(1 + rate, -term)) / rate;
+      const payPerMonth = maxPayable / (1 + shareRate);
+      const maxLoan = payPerMonth * factor;
+      const extraShare = (maxLoan * shareRate) / term;
+
+      let result = `<h2>✅ ผลการคำนวณ</h2>
+        <p>📌 จำนวนงวด: ${term} งวด</p>
+        <p>📈 อัตราดอกเบี้ย/เดือน: ${(rate * 100).toFixed(2)}%</p>
+        <p>💼 ฝากเงินหุ้นประจำ: ${formatNumber(fixedShare)} บาท</p>
+        <p>📊 ฝากหุ้นเพิ่มเติม (${(shareRate * 100).toFixed(0)}%): ${formatNumber(extraShare)} บาท</p>
+        <p>📌 ยอดชำระ (เงินต้น + ดอกเบี้ย): ${formatNumber(payPerMonth)} บาท</p>
+        <p>🧾 รวมยอดชำระต่อเดือน: ${formatNumber(payPerMonth + fixedShare + extraShare)} บาท</p>
+        <p>✅ วงเงินกู้สูงสุด: ${formatNumber(maxLoan)} บาท</p>`;
+
+      result += `<table>
+        <thead>
+          <tr>
+            <th>งวดที่</th><th>ยอดส่งต่อเดือน</th><th>เงินต้น</th><th>ดอกเบี้ย</th>
+            <th>ฝากหุ้น</th><th>ฝากเพิ่ม</th><th>ยอดคงเหลือ</th>
+          </tr>
+        </thead><tbody>`;
+
+      let balance = maxLoan;
+      let totalInterest = 0;
+      let totalPrincipal = 0;
+
+      for (let i = 1; i <= term; i++) {
+        const interest = balance * rate;
+        const principal = payPerMonth - interest;
+        balance -= principal;
+        totalInterest += interest;
+        totalPrincipal += principal;
+
+        result += `<tr>
+          <td>${i}</td>
+          <td>${formatNumber(payPerMonth + fixedShare + extraShare)}</td>
+          <td>${formatNumber(principal)}</td>
+          <td>${formatNumber(interest)}</td>
+          <td>${formatNumber(fixedShare)}</td>
+          <td>${formatNumber(extraShare)}</td>
+          <td>${balance > 0 ? formatNumber(balance) : "0.00"}</td>
+        </tr>`;
+      }
+
+      const totalShares = fixedShare * term;
+      const totalExtra = extraShare * term;
+      const totalPaid = payPerMonth * term + totalShares + totalExtra;
+
+      result += `</tbody></table>
+        <h3>📋 สรุปหลังผ่อนชำระครบ:</h3>
+        <p>💰 ดอกเบี้ยรวมทั้งหมด: ${formatNumber(totalInterest)} บาท</p>
+        <p>💼 เงินฝากหุ้นประจำรวม: ${formatNumber(totalShares)} บาท</p>
+        <p>📊 เงินฝากหุ้นเพิ่มเติมรวม: ${formatNumber(totalExtra)} บาท</p>
+        <p>📦 รวมเงินฝากทั้งหมด: ${formatNumber(totalShares + totalExtra)} บาท</p>
+        <p>💳 ยอดเงินต้นที่ชำระไป: ${formatNumber(totalPrincipal)} บาท</p>
+        <p>🧾 ยอดรวมทั้งหมดที่จ่าย: ${formatNumber(totalPaid)} บาท</p>`;
+
+      document.getElementById("result").innerHTML = result;
+    }
+  </script>
+</body>
+</html>
